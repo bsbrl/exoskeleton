@@ -2,7 +2,8 @@
 
 Description of custom code and associated data reported in the following manuscript.
 
-**Last updated:** James Hope 2023-11-06
+**Last updated:** 2023-11-21
+>Note: `.m` files and associated codes have been uploaded. Links to download dataset will be made available in the immediate future. 
 
 **Contact:** Raise issues via this repo or email to [Suhasa B. Kodandaramaiah](https://cse.umn.edu/me/suhasa-kodandaramaiah) -- suhasabk@umn.edu -- with any questions
 
@@ -300,16 +301,16 @@ Custom MATLAB software codes are provided with all the data necessary to run the
 		
 - Ephys and Exo data
 	- Results from exoskeleton (`Mouse___.mat`), Raw electrophysiology data from INTAN (`___.bin, ___.dat`), Kilosort 2.0 pre-processing of electrophysiology data, and phy GUI spike sorting for 10 sessions across 4mice:
-		- Mouse1Day1 - 221010_1_ENN_M0837 - Phy 221103
-		- Mouse1Day2 - 221003_1_ENN_M0837 - Phy 221103
-		- Mouse1Day3 - 220930_2_ENN_M0837 - Phy 221103
-		- Mouse2Day1 - 220811_1_ENN_M0845 - Phy 220909
-		- Mouse2Day3 - 2220810_1_ENN_M0845 - Phy 220914
-		- Mouse3Day1 - 220816_1_ENN_M0881 - Phy 230308
-		- Mouse3Day2 - 220818_1_ENN_M0881 - Phy 230308
-		- Mouse4Day1 - 230328_2_ENN_M1002 - Phy 230412
-		- Mouse4Day2 - 230403_1_ENN_M1002 - Phy 230412
-		- Mouse4Day3 - 230406_1_ENN_M1002 - Phy 230412
+		> Mouse1Day1 - 221010_1_ENN_M0837 - Phy 221103 \
+		Mouse1Day2 - 221003_1_ENN_M0837 - Phy 221103 \
+		Mouse1Day3 - 220930_2_ENN_M0837 - Phy 221103 \
+		Mouse2Day1 - 220811_1_ENN_M0845 - Phy 220909 \
+		Mouse2Day3 - 2220810_1_ENN_M0845 - Phy 220914 \
+		Mouse3Day1 - 220816_1_ENN_M0881 - Phy 230308 \
+		Mouse3Day2 - 220818_1_ENN_M0881 - Phy 230308 \
+		Mouse4Day1 - 230328_2_ENN_M1002 - Phy 230412 \
+		Mouse4Day2 - 230403_1_ENN_M1002 - Phy 230412 \
+		Mouse4Day3 - 230406_1_ENN_M1002 - Phy 230412
 
 - `MAIN_exo_ephys_analysis_v9.m`
   - Post-processes ephys data, analyzes ephys data, and aligns exoskeleton data.
