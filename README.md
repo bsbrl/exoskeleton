@@ -297,7 +297,7 @@ Custom MATLAB software codes are provided with all the data necessary to run the
 ### 6. Electrophysiology Data Processing
 
 - cvx
-	- MATLAB linear algebra toolbox
+	- MATLAB linear algebra toolbox [cvx toolbox link](http://cvxr.com/cvx/download/)
 		
 - Ephys and Exo data
 	- Results from exoskeleton (`Mouse___.mat`), Raw electrophysiology data from INTAN (`___.bin, ___.dat`), Kilosort 2.0 pre-processing of electrophysiology data, and phy GUI spike sorting for 10 sessions across 4mice:
