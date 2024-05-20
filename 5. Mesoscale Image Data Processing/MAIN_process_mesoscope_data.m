@@ -1,5 +1,5 @@
 %% MAIN SCRIPT TO DO STAT ANALYSIS ON CELL DISTRIBUTIONS
-% Authors: James Hope, Biosensing and Biorobotics Lab, 
+% Authors: James Hope & Michael Feldkamp, Biosensing and Biorobotics Lab, 
 % Department of Mechanical Engineering, University of Minnesota
 % Contact: suhasabk@umn.edu
 
@@ -16,6 +16,32 @@
 %    plots to visualise these reponses
 % 7. ROI analysis of DF/F traces for video production
 
+% Updated 12/21/23 by James Hope
+% Cross validation of location encoding added 
+%   - sorting for odd trials and applying sorting to even trials
+% Motion artefacts analysis added
+%   - correlation between force during motion onset and Ca activity vs.
+%   shuffled data
+
+% Updated 12/22/23 by Michael Feldkamp
+% Motion artifacts analysis updated
+%   - Mouse 1 curated cell examples for range of FDFF correlation
+% Cross validation of location endocing updated
+%   - Added correlation distribution between even and odd trials per cell
+
+% Updated 12/27/23 by Michael Feldkamp
+% Motion artifacts analysis updated
+%   - Added ttest for FDFF and FDFFall
+% Motion artifacts suite2p correction added
+%   - Plotting X and Y coordinate rigid motion correction
+%   - Correlation between motion correction and movement both in total and
+%   during motion onset
+
+% Updated 2/7/24 by Michael Feldkamp
+% Motion artifacts analysis updated
+%   - Reformated example trace plots 3x3 to separate onset and peaks
+%   - Savename for .mat file containing all FDFF correlations across mice
+%   - Added code at end to plot histograms of above data
 
 clear all
 
@@ -91,9 +117,9 @@ d = designfilt('bandpassiir','FilterOrder',4,'PassbandFrequency1',0.05,'Passband
 mean1 = mean(squeeze(neu_subtracted(:,:)),2);
 tmp = filtfilt(d,double(squeeze(neu_subtracted(:,:)')));
 tmp=tmp';
-dff_Data = tmp./mean1;
-dff_Data=detrend(dff_Data',2);
-dff_Data=dff_Data';
+dff_Data_mn = tmp./mean1;
+dff_Data_dt = detrend(dff_Data_mn',2);
+dff_Data = dff_Data_dt';
 
 %% remove overly noisy and mishaped cells 
 % genplot = 1 plots DF/F traces for all cells remaining after exclusion
@@ -101,7 +127,7 @@ dff_Data=dff_Data';
 genplot = 0;  
 [iscell] = Remove_noisy_cells(dff_Data,iscell,genplot,stat);
 
-%% Histograms of npixels and aspect ratio 
+%% Plot numpixels and aspect ratio 
 clear dat_npix dat_aspect
 cellind = find(iscell(:,1)==1);
 m = 1;
@@ -410,6 +436,9 @@ title('Cell DFFs by Region')
 figure
 plot([size(x1,1),size(x2,1),size(x3,1),size(x4,1),size(x5,1)]);
 title('Cell numbers by Region')
+xlabel('Region')
+ylabel('Number of cells')
+
 
 %%  Exoskeleton data 
 % input and output are the same variable so can only run this section once
@@ -475,7 +504,7 @@ vel_mouse_yaw = movmean(vel_mouse_yaw,5);
 accel_mouse = [[0,0,0]; (vel_mouse(2:end,:) - vel_mouse(1:end-1,:))]./tincr;
 accel_mouse_yaw = [[0]; (vel_mouse_yaw(2:end,:) - vel_mouse_yaw(1:end-1,:))]./tincr;
 
-
+% turning zone
 clear dats
 clear storedats
 dats = zeros(size(XYpos_global,1),1);
@@ -508,6 +537,8 @@ sz1 = 5;
 sz2 = ceil(size(storedats,1)/sz1);
 
 d = storedats;
+
+
 %
 %% forces and paths through the turning zone
 % 
@@ -554,7 +585,7 @@ end
 
 Logi_loop = abs(Logi_dzone - 1);
 
-Logi_still = double(vel_mouse(:,1)<0.001);
+Logi_still = double(vel_mouse(:,1)<0.003);
 
 Logi_move = abs(Logi_still - 1);
 
@@ -638,8 +669,10 @@ Logi_turnL = imresize(Logi_turnL,[size(dff_Data,2),1],'nearest');
 Logi_turnR = imresize(Logi_turnR,[size(dff_Data,2),1],'nearest');
 
 XY_pos_rs = imresize(XYpos_global,[size(dff_Data,2),2],'nearest');
-vel_mouse_rs = imresize(vel_mouse(:,1:2),[size(dff_Data,2),2],'nearest');
-vel_mouse_yaw_rs = imresize(vel_mouse_yaw,[size(dff_Data,2),1],'nearest');
+vel_mouse_rs = imresize(vel_mouse(:,1:2),[size(dff_Data,2),2],'bilinear');
+vel_mouse_yaw_rs = imresize(vel_mouse_yaw,[size(dff_Data,2),1],'bilinear');
+Xforce_rs = imresize(Xforce,[size(dff_Data,2),1],'bilinear');
+Yforce_rs = imresize(Yforce,[size(dff_Data,2),1],'bilinear');
 
 %% predictor matrices for location encoding
 
@@ -697,7 +730,7 @@ end
 
 Pred = [Pred_DL,Pred_YL,Pred_DR,Pred_YR];
 
-%% SPIKE ANALYSIS 
+%% CALCIUM ACTIVITY ANALYSIS 
 
 % first smooth spike data;
 clear Ki Kfilt GW x spks_filt
@@ -725,14 +758,10 @@ for n = 1:size(iscell,1)
     end
 end
 
-%%  
 spk_clip = size(F,2);
 
 X = Pred(1:spk_clip,:);
-% checkX = find(sum(X,1)==0);
-% X(:,checkX) = [];
 Predarray = [edges_D,edges_yaw,edges_D,edges_yaw];
-% Predarray(:,checkX) = [];
 
 Xsmall = find(sum(X,1)<5);
 X(:,Xsmall) = 0;
@@ -749,6 +778,15 @@ xlabel('predictor')
 ylabel('cell')
 title('Kernel raw')
 
+<<<<<<< HEAD
+=======
+%% Test because I'm going crazy
+temp_norm = []; n = 1;
+for ii = 0.26:0.0001:0.27
+    temp_norm(end+1) = sum(Keep_spks(50,X(:,5)==1)-ii)^2bh;
+end
+
+>>>>>>> parent of 4c62ecf (NP1 Ephys processing)
 %%
 clear MAXC Cpeak Csorted Corder MAXC
 
@@ -832,8 +870,399 @@ ylabel('cell')
 % xlabel('predictor')
 % ylabel('cell')
 
+%% CROSS-VALIDATE LOCATION ENCODING 
+% by generating mean Ca activity in pos bins during odd trials,
+% sorting, and then applying sorting to even trials
 
+% initialize odd and even trial arrays
+Logi_odd = zeros(size(Logi_move));
+Logi_even = Logi_odd;
 
+% populate arrays
+startref = 0;
+latch = 0;
+for n = 2:size(Logi_turnL,1)
+    
+    % entering left turn zone
+    if Logi_turnL(n-1,1) == 0 && Logi_turnL(n,1) > 0 
+        latch = abs(1-latch);
+       % find start period
+        if startref == 0
+            startref = n;
+        end
+    end
+    
+    if latch == 1
+        Logi_odd(n,1) = 1;
+    else
+        Logi_even(n,1) = 1;
+    end
+        
+end
+
+% remove start period where mouse on wheel and NaN out unwanted periods
+Logi_odd(1:startref) = 0;
+Logi_odd(Logi_odd == 0) = NaN;
+Logi_even(1:startref) = 0;
+Logi_even(Logi_even == 0) = NaN;
+Logi_all = NaN(size(Logi_even)); Logi_all(~isnan(Logi_even)|~isnan(Logi_odd)) = 1;
+
+% NaN binary predictor array to allow column averaging 
+Pred_nan = Pred;
+Xsmall = find(sum(Pred_nan,1)<10); % remove low occupancy bins
+Pred_nan(:,Xsmall) = 0;
+Pred_nan(Pred_nan == 0) = NaN;
+
+% Calculate mean Ca activity on odd trials 
+clear spks_odd_mn spks_even_mn spks_all_mn
+for n = 1:size(Keep_spks,1)
+    
+    spkstemp = Keep_spks(n,:)';
+    spks_odd = spkstemp.*Pred_nan.*Logi_odd;
+    spks_odd_mn(n,:) = mean(spks_odd,1,'omitnan');
+    
+    spks_even = spkstemp.*Pred_nan.*Logi_even;
+    spks_even_mn(n,:) = mean(spks_even,1,'omitnan');
+
+    spks_all = spkstemp.*Pred_nan.*(Logi_all);
+    spks_all_mn(n,:) = mean(spks_all,1,'omitnan');
+
+end
+
+% normalize
+spks_odd_norm = spks_odd_mn./max(spks_odd_mn,[],2);
+spks_even_norm = spks_even_mn./max(spks_even_mn,[],2);
+spks_all_norm = spks_all_mn./max(spks_all_mn,[],2);
+
+K = spks_odd_norm';
+
+clear Kpeak
+for n = 1:size(K,2)
+    tf = isnan(K(1,n));
+    if tf == 0
+        [M,~] = find(K(:,n) == 1);
+        Kpeak(1,n) = M;
+    end
+end
+
+univals = unique(Kpeak);
+
+for n = 1:size(univals,2)
+    [~,M] = find(Kpeak(1,:) == univals(1,n));
+    temp = K(:,M);
+    if n == 1
+        Ksorted = temp;
+        Kindex = M;
+    else
+        Ksorted = [Ksorted,temp];
+        Kindex = [Kindex,M];
+    end
+end
+
+spks_odev_corr = NaN(size(spks_odd_norm,1),1);
+for n = 1:size(spks_odd_norm,1)
+    temp_odd = (spks_odd_norm(n,~isnan(spks_odd_norm(n,:))))';
+    temp_even = (spks_even_norm(n,~isnan(spks_even_norm(n,:))))';
+    spks_odev_corr(n) = corr(temp_odd,temp_even);
+end
+figure
+set(gcf,'color','white')
+subplot(1,3,1)
+imagesc(spks_odd_norm(Kindex,:))
+title('Odd trials')
+xlabel('Position bin')
+ylabel('Cell')
+
+subplot(1,3,2)
+imagesc(spks_even_norm(Kindex,:))
+title('Even trials')
+xlabel('Position bin')
+ylabel('Cell')
+cb = colorbar; cb.Location = 'east';
+
+subplot(1,3,3)
+histogram(spks_odev_corr,[-1:0.05:1],'Normalization','Probability','EdgeAlpha',0,'FaceColor',[138, 131, 103]/255)
+title('Trial-trial cell correlation')
+xlabel('Correlation')
+ylabel('Probability')
+xlim([-1 1])
+
+colormap(abs(1 - bone))
+set(gcf,'Position',[100 100 1500 350])
+
+figure; set(gcf,'color','white')
+[~,oneidx] = max(spks_all_norm,[],2);
+[~,oneidx] = sort(oneidx,'ascend');
+imagesc(spks_all_norm(oneidx,:),'AlphaData',~isnan(spks_all_norm(oneidx,:)))
+%% MOTION ARTEFACTS ANALYSIS
+% by evaluating correlation between forces during motion on set and
+% fluoresnce ... then compare to some other time point / shuffled data
+
+% Ca activity vs time
+temp = dff_Data(iscell==1,:);
+temp = temp./max(temp,[],2);
+
+% figure
+% imagesc(temp(Cindex,:)')
+
+% find periods of motion onset
+Movmov = [0; Logi_move(2:end,:) - Logi_move(1:end-1,:)];
+
+[M,~] = find(Movmov == 1);
+
+win = 10;
+for n = 1:size(M,1)
+    Movon(n,:) = [M(n)-win:M(n)+win];
+end
+%% ANALYSE FORCE DFF CORRELATION 
+
+% for motion onset 
+clear FDFF FDFFall tempF Fpeaks
+
+for n = 1:size(temp,1)
+    clear tempCa
+    for m = 1:size(Movon,1)
+        idx = Movon(m,:);        
+        [FDFF(n,m), p_FDFF(n,m)] = corr(Xforce_rs(idx),temp(n,idx)','Type','Pearson');
+    end
+end
+
+% moving Xforce array
+Xforcemov = Xforce_rs;
+% remove motion onset periods
+for m = 1:size(Movon,1)
+    idx = Movon(m,:);  
+    Xforcemov(idx) = 0;
+end
+    
+% for force peaks while moving
+[pks,locs] = findpeaks(Xforcemov,'MinPeakDistance',15,'MinPeakHeight',0.3,'MinPeakProminence',0.3);
+
+for m = 1:size(pks,1)
+    Fpeaks(m,:) = [locs(m)-win:locs(m)+win];
+end
+
+for n = 1:size(temp,1)
+    clear tempCa
+    for m = 1:size(Fpeaks,1)
+        idx = Fpeaks(m,:);        
+        [FDFFall(n,m), p_FDFFall(n,m)] = corr(Xforce_rs(idx),temp(n,idx)','Type','Pearson');
+    end
+end
+
+% plot Pearson correlation coeffs
+figure
+% subplot(1,3,1)
+set(gcf,'color','white')
+histogram(FDFF,[-1:0.1:1],'Normalization','probability') % Movement onset periods
+hold on
+histogram(FDFFall,[-1:0.1:1],'Normalization','probability') % Force peaks minus movement onset periods
+
+clear saveFDFF
+saveFDFF{1} = FDFF;
+saveFDFF{2} = FDFFall;
+% savehist{1} = histcounts(FDFF,[-1:0.1:1]); % Movement onset periods
+% savehist{2} = histcounts(FDFFall,[-1:0.1:1]); % Force peaks minus movement onset periods
+
+xlabel('Correlation')
+ylabel('Probability')
+legend('Movement onset','Moving')
+title('Force - DF/F correlation')
+set(gcf,'Position',[100 100 600 400])
+
+[hF, pF] = ttest2(reshape(FDFF,1,[]),reshape(FDFFall,1,[])); % Statistical significance of difference between FDFF and FDFFall distributions
+
+% subplot(1,3,2)
+% refidx = 1:size(iscell,1);
+% refidx = refidx(iscell==1);
+% clear xycell
+% for n = 1:size(refidx,2)
+%     xycell(n,:) = stat{1,refidx(n)}.med;
+% end
+% scatter(-xycell(:,1),xycell(:,2),6,mean(FDFF,2));
+% axis ij
+%     
+    
+% plot locations of force peaks used for motion onset (blue) and motion
+% (orange)
+figure
+set(gcf,'color','white')
+hold on
+for n = 1:size(Movon,1)
+    idx = Movon(n,:);  
+    fill([idx,fliplr(idx)]./15,[zeros(size(idx)),ones(size(idx))],[0 0.4470 0.7410],'EdgeColor','None','FaceAlpha',0.5)
+end
+for n = 1:size(Fpeaks,1)
+    idx = Fpeaks(n,:);  
+    fill([idx,fliplr(idx)]./15,[zeros(size(idx)),ones(size(idx))],[0.8500 0.3250 0.0980],'EdgeColor','None','FaceAlpha',0.5)
+end
+
+time = [1:size(Xforce_rs,1)]./15;
+plot(time,Xforce_rs,'k')
+xlabel('Time (s)')
+ylabel('Force (N)')
+title('Peak locations for force - DF/F correlation')
+legend('Movement onset','Moving','Force')
+
+%% Create 3x3 figures of cell-force correlation
+% cells = [1900;727;2242;424;1320;564]; % Mouse 1
+% 
+% figure
+% subplot(3,3,1)
+% for n = 1:length(pks)
+%     plot([-win:win]./15,Xforce_rs(Fpeaks(n,:)),'k')
+%     hold on
+%     xlabel('Time (s)')
+%     ylabel('Force (N)')
+%     title('Force')
+% end
+% for c = 1:6
+%     subplot(3,3,c+3)
+%     for n = 1:length(pks)
+%         hold on
+%         plot([-win:win]./15,temp(cells(c),(Fpeaks(n,:))),'k')
+%     end
+%     xlabel('Time (s)')
+%     ylabel('Normalized DF/F')
+%     title(['Cell ',num2str(cells(c))]) % Run before calculating FDFF later
+%     title(['Cell ',num2str(cells(c)),' corr = ', num2str(round(mean(FDFFall(cells(c),:)),3))]) % Run after calculating FDFF later
+%     ylim([-0.5 1])
+% end
+% sgtitle('Force peaks, not onset')
+% 
+% figure
+% subplot(3,3,1)
+% for n = 1:size(Movon,1)
+%     plot([-win:win]./15,Xforce_rs(Movon(n,:)),'k')
+%     hold on
+%     xlabel('Time (s)')
+%     ylabel('Force (N)')
+%     title('Force')
+% end
+% for c = 1:6
+%     subplot(3,3,c+3)
+%     for n = 1:size(Movon,1)
+%         hold on
+%         plot([-win:win]./15,temp(cells(c),(Movon(n,:))),'k')
+%     end
+%     xlabel('Time (s)')
+%     ylabel('Normalized DF/F')
+%     title(['Cell ',num2str(cells(c))]) % Run before calculating FDFF later
+%     title(['Cell ',num2str(cells(c)),' corr = ', num2str(round(mean(FDFF(cells(c),:)),3))]) % Run after calculating FDFF later
+%     ylim([-0.5 1])
+% end
+% sgtitle('Movement onset')
+%% ANALYZE SUITE2P MOTION ARTIFACTS (MOTION CORRECTION)
+% xoff = double(ops.xoff); % rigid offsets
+% yoff = double(ops.yoff); % rigid offsets
+xoff1 = ops.xoff1; % nonrigid offsets (128 x 128 pixel blocks)
+yoff1 = ops.yoff1; % nonrigid offsets (128 x 128 pixel blocks)
+
+xoff1mean = mean(xoff1');
+yoff1mean = mean(yoff1');
+
+xoff = xoff1mean;
+yoff = yoff1mean;
+
+colX = [222, 154, 95 200]/255;
+colY = [77, 131, 219 200]/255;
+colXf = [199, 72, 26]/255;
+colYf = [33, 71, 196]/255;
+
+figure
+subplot(2,2,1)
+xlabel('Time (sec)')
+yyaxis left
+hold on
+yline(0,'Color',[0.5 0.5 0.5])
+plot(time,xoff,'-','Color',colX)
+plot(time,yoff,'-','Color',colY)
+ylim([-1 1])
+ylabel('offset (pix)')
+yyaxis right
+hold on
+plot(time,Xforce_rs,'-','Color',colXf)
+plot(time,Yforce_rs,'-','Color',colYf)
+ylim([-1 1])
+ylabel('Force (N)')
+legend('','X offset', 'Y offset','X force','Y force')
+Xforcorr = corr(double(xoff'),Xforce_rs);
+Yforcorr = corr(double(yoff'),Xforce_rs);
+title(['Xfc = ',num2str(Xforcorr),' Yfc = ',num2str(Yforcorr)])
+xlim([0 max(time)])
+
+% subplot(2,2,2)
+% xlabel('Time (sec)')
+% yyaxis left
+% hold on
+% yline(0,'Color',[0.5 0.5 0.5])
+% plot(time,xoff,'-','Color',colX)
+% plot(time,yoff,'-','Color',colY)
+% ylim([-1 1])
+% ylabel('offset (pix)')
+% yyaxis right
+% hold on
+% plot(time,Yforce_rs,'k')
+% ylim([-1 1])
+% ylabel('Force (N)')
+% legend('','X offset', 'Y offset','X force')
+% Xforcorr = corr(double(xoff'),Yforce_rs);
+% Yforcorr = corr(double(yoff'),Yforce_rs);
+% title(['Xfc = ',num2str(Xforcorr),' Yfc = ',num2str(Yforcorr)])
+
+subplot(2,2,3)
+xlabel('Time (sec)')
+yyaxis left
+hold on
+yline(0,'Color',[0.5 0.5 0.5])
+plot(time,xoff,'-','Color',colX)
+plot(time,yoff,'-','Color',colY)
+ylim([-1 1])
+ylabel('offset (pix)')
+yyaxis right
+hold on
+plot(time,Xforce_rs,'Color',colXf)
+ylim([-1 1])
+ylabel('Force (N)')
+legend('','X offset', 'Y offset','Y force')
+xlim([185 195])
+title('Sample')
+
+subplot(2,2,4)
+xlabel('Time (sec)')
+yyaxis left
+hold on
+yline(0,'Color',[0.5 0.5 0.5])
+plot(time,xoff,'-','Color',colX)
+plot(time,yoff,'-','Color',colY)
+ylim([-1 1])
+ylabel('offset (pix)')
+yyaxis right
+hold on
+plot(time,Yforce_rs,'Color',colYf)
+ylim([-1 1])
+ylabel('Force (N)')
+legend('','X offset', 'Y offset','Y force')
+xlim([185 195])
+title('Sample')
+
+% clear Xmotcorr pX
+% for c = 1:size(temp,1) % Correlations between DFF data and x motion correction
+%     [Xmotcorr(c),pX(c)] = corr(temp(c,:)',double(xoff'));
+%     [Ymotcorr(c),pY(c)] = corr(temp(c,:)',double(yoff'));
+% end
+
+% clear Xmovoncorr Ymovoncorr pxmovoncorr pymovoncorr
+% for m = 1:size(Movon,1)
+%     [Xmovoncorr(m),pxmovoncorr(m)] = corr(double(xoff(Movon(m,:))'),Xforce_rs(Movon(m,:)));
+%     [Ymovoncorr(m),pymovoncorr(m)] = corr(double(yoff(Movon(m,:))'),Xforce_rs(Movon(m,:)));
+% end
+% 
+% figure
+% hold on
+% histogram(Xmovoncorr)
+% xlim([-1 1])
+% legend
 %% SHOW LOCATION OF CELLS OF INTEREST
 % Figures in paper generated from Mouse 1 (Mouse982_Date23_1_21)
 % can select a range of cells to plot. Intra is the cell index using the
@@ -1112,3 +1541,39 @@ imagesc(imrotate(image_loc_cells,-90))
 % 
 % 
 % 
+%% Plot histograms of FDFF and FDFFall correlations
+H1 = load('saveFDFFM1.mat').saveFDFF;
+H2 = load('saveFDFFM2.mat').saveFDFF;
+H3 = load('saveFDFFM3.mat').saveFDFF;
+H4 = load('saveFDFFM4.mat').saveFDFF;
+
+FDFF = [H1{1}(:);H2{1}(:);H3{1}(:);H4{1}(:)];
+FDFFall = [H1{2}(:);H2{2}(:);H3{2}(:);H4{2}(:)];
+
+figure
+hold on
+edges = -1:0.1:1;
+histogram(FDFF,edges,'FaceColor',"#0072BD",'normalization','probability')
+histogram(FDFFall,edges,'FaceColor',"#D95319",'normalization','probability')
+xline(median(FDFF),'color',"#0072BD")
+xline(median(FDFFall),'color',"#D95319")
+text(0,0,[num2str(median(FDFF)),',',num2str(median(FDFFall))])
+
+% 
+% HFDFF = sum([H1{1};H2{1};H3{1};H4{1}]);
+% HFDFF = HFDFF/sum(HFDFF);
+% HFDFFall = sum([H1{2};H2{2};H3{2};H4{2}]);
+% HFDFFall = HFDFFall/sum(HFDFFall);
+% figure
+% hold on
+% 
+% bar(HFDFF,1,'FaceAlpha',0.5,'FaceColor',"#0072BD")
+% bar(HFDFFall,1,'FaceAlpha',0.5,'FaceColor',"#D95319")
+% legend('Onset','Moving peaks')
+% 
+% xticks([0.5 10.5 20.5])
+% xticklabels({'-1','0','1'})
+% xlabel('Correlation')
+% ylabel('Probability')
+% 
+% xline(0)

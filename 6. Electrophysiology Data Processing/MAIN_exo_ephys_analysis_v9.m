@@ -27,7 +27,7 @@ clear all
 % uncomment the line for the data your analyzing, to set Turn_seq and fs
 
 % Mouse 1
-% Turn_seq = [0 0 0 0 1 1 1 1 1 1 1 1 1 1]'; fs = 30000;  % Mouse1 Day1 (M837 221010)
+Turn_seq = [0 0 0 0 1 1 1 1 1 1 1 1 1 1]'; fs = 30000;  % Mouse1 Day1 (M837 221010)
 % Turn_seq = [0 0 0 0 1 1 1 1 1 1 1]';      fs = 20000;  % Mouse1 Day2 (M837 221003)
 % Turn_seq = [0 0 0 0 0 1 1 1 1 1]';        fs = 30000;  % Mouse1 Day3 (M837 220930)
 
@@ -42,7 +42,7 @@ clear all
 % Mouse 4
 % Turn_seq = [0 0 1 1 1 1 1 1 1 1 1 1 1]';   fs = 30000; % Mouse4 Day1 (M1002 230328)
 % Turn_seq = [0 0 1 1 1 1 1 1 1 1 1 1]';     fs = 30000; % Mouse4 Day2 (M1002 230403)
-Turn_seq = [0 0 1 1 1 1 1 1 1 1 1 1 1 1 1]'; fs = 30000; % Mouse4 Day3 (M1002 230406)
+% Turn_seq = [0 0 1 1 1 1 1 1 1 1 1 1 1 1 1]'; fs = 30000; % Mouse4 Day3 (M1002 230406)
 
 
 %% Select folder with the data you want to process
