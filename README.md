@@ -1,9 +1,9 @@
-# Brain-wide neural recordings in mice navigating physical spaces enabled by a cranial exoskeleton
+# Brain-wide neural recordings in mice navigating physical spaces enabled by robotic neural recording headstages
 
 Description of custom code and associated data reported in the following manuscript.
 
-**Last updated:** 2023-11-21
->Note: `.m` files and associated codes have been uploaded. Links to download dataset will be made available in the immediate future. 
+**Last updated:** 2024-10-10
+>Note: `.m` files and associated codes have been uploaded. Link to download dataset: [link to Zenodo](https://doi.org/10.5281/zenodo.10454727)
 
 **Contact:** Raise issues via this repo or email to [Suhasa B. Kodandaramaiah](https://cse.umn.edu/me/suhasa-kodandaramaiah) -- suhasabk@umn.edu -- with any questions
 
@@ -12,7 +12,10 @@ Description of custom code and associated data reported in the following manuscr
 ## MANUSCRIPT INFORMATION
 
 ### Title
+Nature Methods:
+["Brain-wide neural recordings in mice navigating physical spaces enabled by robotic neural recording headstages"](https://doi.org/10.1038/s41592-024-02434-z)
 
+Pre-print: 
 ["Brain-wide neural recordings in mice navigating physical spaces enabled by a cranial exoskeleton"](https://www.biorxiv.org/content/10.1101/2023.06.04.543578v1)
 
 ### Authors
